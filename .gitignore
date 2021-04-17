@@ -1,0 +1,4 @@
+# Github .gitignore file.
+bin/
+obj/
+.vs/
