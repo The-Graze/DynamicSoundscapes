@@ -43,7 +43,7 @@ namespace DynamicSoundscapes
             ConfigFile customConfig = new ConfigFile(Path.Combine(Paths.ConfigPath, "Dynamic Soundscapes.cfg"), true); // Create custom config file.
 
             configVolume = customConfig.Bind("Main", "Volume", 0.08f, "Max volume. ( Can get REALLY LOUD! Please try to not loose your hearing! )");
-            configForest = customConfig.Bind("Sounds", "Forest", "https://cdn.discordapp.com/attachments/696322098305564682/832535170947088394/forest.ogg", "Ambience played in forest area.");
+            configForest = customConfig.Bind("Sounds", "Forest", "https://cdn.discordapp.com/attachments/696322098305564682/832993410528575518/forest2.ogg", "Ambience played in forest area.");
             configCave = customConfig.Bind("Sounds", "Cave", "https://cdn.discordapp.com/attachments/696322098305564682/830529231624470548/cave.ogg", "Ambience played in cave area.");
             configCanyon = customConfig.Bind("Sounds", "Canyon", "https://cdn.discordapp.com/attachments/696322098305564682/831511319479844894/canyon2.ogg", "Ambience played in canyon area.");
             configCosmetics = customConfig.Bind("Sounds", "Cosmetics", "https://cdn.discordapp.com/attachments/696322098305564682/831390225397710908/cosmetics.ogg", "Ambience played in cosmetic area.");
