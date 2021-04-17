@@ -25,68 +25,72 @@ namespace DynamicSoundscapes
     [BepInProcess("Gorilla Tag.exe")]
     public class MonkePlugin : BaseUnityPlugin
     {
-        private ConfigEntry<string> configForest;
-        private ConfigEntry<string> configCave;
-        private ConfigEntry<string> configCanyon;
-        private ConfigEntry<string> configCosmetics;
-        private ConfigEntry<string> configFall;
-        private ConfigEntry<string> configIntro;
-        private ConfigEntry<string> configKeypress;
+        static private ConfigEntry<float> configVolume;
+        static private ConfigEntry<string> configForest;
+        static private ConfigEntry<string> configCave;
+        static private ConfigEntry<string> configCanyon;
+        static private ConfigEntry<string> configCosmetics;
+        static private ConfigEntry<string> configFall;
+        static private ConfigEntry<string> configIntro;
+        static private ConfigEntry<string> configKeypress;
+
+        public static String[] ambienceStrings = new string[] { }; // There has to be a better way to get it from the config!
+        public static float volume = 0.08f;  // Set audio volume.
         private void Awake()
         {
             new Harmony("com.auralius.monkeytag.ambientsounds").PatchAll(Assembly.GetExecutingAssembly());
 
-            ConfigFile customConfig = new ConfigFile(Path.Combine(Paths.ConfigPath, "Dynamic Soundscapes.cfg"), true);
+            ConfigFile customConfig = new ConfigFile(Path.Combine(Paths.ConfigPath, "Dynamic Soundscapes.cfg"), true); // Create custom config file.
+
+            configVolume = customConfig.Bind("Main", "Volume", 0.08f, "Max volume. ( Can get REALLY LOUD! Please try to not loose your hearing! )");
             configForest = customConfig.Bind("Sounds", "Forest", "https://cdn.discordapp.com/attachments/696322098305564682/832535170947088394/forest.ogg", "Ambience played in forest area.");
-            configCave = customConfig.Bind("Sounds", "Cave", "https://cdn.discordapp.com/attachments/696322098305564682/832535170947088394/forest.ogg", "Ambience played in cave area.");
-            configCanyon = customConfig.Bind("Sounds", "Canyon", "https://cdn.discordapp.com/attachments/696322098305564682/832535170947088394/forest.ogg", "Ambience played in canyon area.");
-            configCosmetics = customConfig.Bind("Sounds", "Cosmetics", "https://cdn.discordapp.com/attachments/696322098305564682/832535170947088394/forest.ogg", "Ambience played in cosmetic area.");
-            configFall = customConfig.Bind("Sounds", "Falling", "https://cdn.discordapp.com/attachments/696322098305564682/832535170947088394/forest.ogg", "Sound played when falling");
-            configIntro = customConfig.Bind("Sounds", "Intro", "https://cdn.discordapp.com/attachments/696322098305564682/832535170947088394/forest.ogg", "Sound played when plugin loads.");
-            configKeypress = customConfig.Bind("Sounds", "Keypress", "https://cdn.discordapp.com/attachments/696322098305564682/832535170947088394/forest.ogg", "Sound played when you press a key on the gorila OS computer.");
+            configCave = customConfig.Bind("Sounds", "Cave", "https://cdn.discordapp.com/attachments/696322098305564682/830529231624470548/cave.ogg", "Ambience played in cave area.");
+            configCanyon = customConfig.Bind("Sounds", "Canyon", "https://cdn.discordapp.com/attachments/696322098305564682/831511319479844894/canyon2.ogg", "Ambience played in canyon area.");
+            configCosmetics = customConfig.Bind("Sounds", "Cosmetics", "https://cdn.discordapp.com/attachments/696322098305564682/831390225397710908/cosmetics.ogg", "Ambience played in cosmetic area.");
+            configFall = customConfig.Bind("Sounds", "Falling", "https://cdn.discordapp.com/attachments/696322098305564682/831514441660629022/fall.ogg", "Sound played when falling");
+            configIntro = customConfig.Bind("Sounds", "Intro", "https://cdn.discordapp.com/attachments/696322098305564682/832188272616275998/intro.ogg", "Sound played when plugin loads.");
+            configKeypress = customConfig.Bind("Sounds", "Keypress", "https://cdn.discordapp.com/attachments/696322098305564682/832243629304578138/keypress.ogg", "Sound played when you press a key on the gorila OS computer.");
 
+            ambienceStrings = new string[] // All the audio web links (or file links).
+            {
+                configForest.Value,
+                configCave.Value,
+                configCanyon.Value,
+                configCosmetics.Value,
+                configFall.Value,
+                configIntro.Value,
+                configKeypress.Value
+            };
 
-            StartCoroutine(GetAudio());
+            StartCoroutine(GetAudio()); // Download/get the audio clips.
         }
 
-        public static String[] ambienceStrings = new string[]{
-            "https://cdn.discordapp.com/attachments/696322098305564682/832535170947088394/forest.ogg",
-            "https://cdn.discordapp.com/attachments/696322098305564682/830529231624470548/cave.ogg",
-            "https://cdn.discordapp.com/attachments/696322098305564682/831511319479844894/canyon2.ogg",
-            "https://cdn.discordapp.com/attachments/696322098305564682/831390225397710908/cosmetics.ogg",
-            "https://cdn.discordapp.com/attachments/696322098305564682/831514441660629022/fall.ogg",
-            "https://cdn.discordapp.com/attachments/696322098305564682/832188272616275998/intro.ogg",
-            "https://cdn.discordapp.com/attachments/696322098305564682/832243629304578138/keypress.ogg"
-        };
-
-        public static AudioClip[] ambienceAudio = new AudioClip[7];
-        public static bool fetched = false;
-        public static readonly float volume = 0.08f;
-        IEnumerator GetAudio()
+        public static AudioClip[] ambienceAudio = new AudioClip[7]; // All the audio clips.
+        public static bool fetched = false; // Wait for the audio clips to load then run the main stuff of the mod.
+        IEnumerator GetAudio() // Coroutine for loading audio as OGG and convert to audioClips.
         {
             for (int i = 0; i < ambienceStrings.Length; i++)
             {
-                string path = string.Format("{0}/{1}", Application.streamingAssetsPath, ambienceStrings[i].GetHashCode());
-                string url = System.IO.File.Exists(path) ? path : ambienceStrings[i];
+                string path = string.Format("{0}/{1}", Application.streamingAssetsPath, ambienceStrings[i].GetHashCode()); // Get hash code of url link and use as file name.
+                string url = System.IO.File.Exists(path) ? path : ambienceStrings[i]; // If the file exists then load that otherwise load from the internets.
 
-                using (UnityWebRequest req = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.OGGVORBIS))
+                using (UnityWebRequest req = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.OGGVORBIS)) // Use UnityWebRequest to get audio from the internets. Can also be used to get local file's and use those.
                 {
-                    yield return req.SendWebRequest();
+                    yield return req.SendWebRequest(); // Send web request.
 
-                    if (req.isNetworkError || req.isHttpError)
-                    {
-                        Console.WriteLine("Fetching track had error: " + req.error);
+                    if (req.isNetworkError || req.isHttpError) // Shouldn't error, but if it does then log it to the console.
+                        {
+                            Console.WriteLine("Fetching track had error: " + req.error);
                     }
                     else
                     {
-                        ambienceAudio[i] = DownloadHandlerAudioClip.GetContent(req);
-                        System.IO.File.WriteAllBytes(path, req.downloadHandler.data);
+                        ambienceAudio[i] = DownloadHandlerAudioClip.GetContent(req); // Add audio to array.
+                        System.IO.File.WriteAllBytes(path, req.downloadHandler.data); // Write to file.
                         Console.WriteLine("Got track " + i);
                     }
                 }
             }
-            fetched = true;
-
+            fetched = true; // Finally got all the audio clips!
         }
 
 
@@ -97,8 +101,8 @@ namespace DynamicSoundscapes
             private static void Postfix(ref Collider collider)
             {
                 if (fetched)
-                { // This was easy!
-                    AudioSource.PlayClipAtPoint(ambienceAudio[6], collider.transform.position, volume);
+                {    
+                    AudioSource.PlayClipAtPoint(ambienceAudio[6], collider.transform.position, volume); // Play keyboard sounds. https://www.youtube.com/watch?v=J---aiyznGQ
                 }
             }
         }
@@ -109,50 +113,37 @@ namespace DynamicSoundscapes
         {
             static List<AudioSource> sources = new List<AudioSource>();
 
-            private enum Tracks : int
+            private enum Tracks : int // Tracks.
             {
                 None,
                 Forest,
                 Cave,
                 Canyon,
                 Cosmetics,
-                Falling
+                Falling // Totally a track.
             }
-            private enum Areas : int
+            private enum Areas : int // Areas.
             {
                 None,
                 Forest,
-                //Stump,
                 Cosmetics,
-                //CosmeticsLerp,
                 Cave,
-                //CaveLerpTop,
-                //CaveLerpBottom,
                 Canyon
-                //CanyonLerp
             }
 
-            private static Bounds[] boundList = new Bounds[] { };
+            private static Bounds[] boundList = new Bounds[] { }; // List of all audio bounds.
 
-            private static string[] triggerList = new string[] { "JoinPublicRoom (tree exit)", "JoinPublicRoom (cave entrance)", "LeavingCaveGeo", "EnteringCosmetics", "JoinPublicRoom (canyon)" };
-            private enum UserReverbPresets : int
+            private static string[] triggerList = new string[] { "JoinPublicRoom (tree exit)", "JoinPublicRoom (cave entrance)", "LeavingCaveGeo", "EnteringCosmetics", "JoinPublicRoom (canyon)" }; // List of triggers.
+            private enum UserReverbPresets : int // Reverb presets.
             {
                 Room,
                 Cave,
                 Hallway,
                 Forest,
-                City,
-                /*
-                None,
-                Cave,
-                Mine,
-                Outside,
-                Stump,
-                OutsideOcclusion
-                */
+                City
             }
 
-            private static float[][] ReverbPresetArrays = new float[][] {
+            private static float[][] ReverbPresetArrays = new float[][] { // Oh god, please put this in another file!
                 new float[] { // Room
                     0f,
                     -1000f,
@@ -169,8 +160,8 @@ namespace DynamicSoundscapes
                     100f,
                     100f
                 },
-                new float[] {
-                    0f, // Cave
+                new float[] { // Cave
+                    0f,
                     -1000f,
                     0f,
                     0f,
@@ -185,24 +176,24 @@ namespace DynamicSoundscapes
                     100f,
                     100f
                 },
-                new float[] {
-                0f, // Hallway
-                -1000f,
-                -300f,
-                0f,
-                1.49f,
-                0.59f,
-                -1219f,
-                0f,
-                441f,
-                0.011f,
-                5000f,
-                250f,
-                100f,
-                100f
+                new float[] { // Hallway
+                    0f,
+                    -1000f,
+                    -300f,
+                    0f,
+                    1.49f,
+                    0.59f,
+                    -1219f,
+                    0f,
+                    441f,
+                    0.011f,
+                    5000f,
+                    250f,
+                    100f,
+                    100f
                 },
-                new float[] {
-                    0f, // Forest
+                new float[] { // Forest
+                    0f,
                     -1000f,
                     -3300f,
                     0f,
@@ -217,8 +208,8 @@ namespace DynamicSoundscapes
                     79f,
                     100f
                 },
-                new float[] {
-                    0f, // City
+                new float[] { // City
+                    0f,
                     -1000f,
                     -800f,
                     0f,
@@ -235,14 +226,12 @@ namespace DynamicSoundscapes
                 }
             };
 
-            private static bool ranOnce = false;
+            private static bool ranOnce = false; // Did it run once?
             private static float timer = 0f;
             private static bool audioChanged = true;
             private static bool firstLerp = true;
             private static Tracks curTrack = Tracks.Forest;
             private static Tracks lastTrack = Tracks.Forest;
-            //private static Areas curArea = Areas.Stump;
-            //private static Areas lastArea = Areas.Stump;
             private static float lerpTrack = 0f;
             private static GorillaTriggerBox[] triggers = null;
             private static Bounds curBounds = new Bounds();
@@ -258,25 +247,18 @@ namespace DynamicSoundscapes
             private static int tagTimer = 0;
 
             private static bool[] triggerSides = new bool[5];
-            /*
-            private static void SetLastArea()
-            {
-                if (lastArea != curArea)
-                    lastArea = curArea;
-            }
-            */
             private static void SetLastTrack()
             {
                 if (lastTrack != curTrack)
                     lastTrack = curTrack;
             }
 
-            private static void SetReverbPreset()
+            private static void SetReverbPreset() // Custom function for setting reverb preset.
             {
                 if (curReverbPreset != lastReverbPreset)
                 {
                     lastReverbPreset = curReverbPreset;
-                    var arr = ReverbPresetArrays[(int)curReverbPreset];
+                    float[] arr = ReverbPresetArrays[(int)curReverbPreset];
                     audioReverb.dryLevel = arr[0];
                     audioReverb.room = arr[1];
                     audioReverb.roomHF = arr[2];
@@ -299,48 +281,23 @@ namespace DynamicSoundscapes
                 {
                     if (fetched)
                     {
-                        var plyPos = __instance.bodyCollider.transform.position;
+                        Vector3 plyPos = __instance.bodyCollider.transform.position; // Get player position.
 
                         if (!ranOnce)
                         {
-                            audio = Resources.FindObjectsOfTypeAll<AudioListener>()[0];
+                            audio = Resources.FindObjectsOfTypeAll<AudioListener>()[0]; // Get audio listener.
                             audioReverb = audio.gameObject.AddComponent<AudioReverbFilter>();
                             audioLowPass = audio.gameObject.AddComponent<AudioLowPassFilter>();
                             audioReverb.enabled = true;
                             audioLowPass.enabled = false;
                             triggers = Resources.FindObjectsOfTypeAll<GorillaTriggerBox>();
-                            /*
-                            foreach (var trig in triggers)
-                            {
-                                if (triggerList.Contains<string>(trig.name))
-                                {
-                                    var bounds = trig.GetComponent<Collider>().bounds;
-                                    var obj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                                    GameObject.Destroy(obj.GetComponent<Rigidbody>());
-                                    GameObject.Destroy(obj.GetComponent<Collider>());
-                                    obj.transform.position = bounds.center;
-                                    obj.transform.localScale = new Vector3(bounds.size.x, bounds.size.y, bounds.size.z);
-                                    //ALPHA STARTS HERE
-                                    Material mat = obj.GetComponent<Renderer>().material;
-                                    mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
-                                    mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                                    mat.SetInt("_ZWrite", 0);
-                                    mat.DisableKeyword("_ALPHATEST_ON");
-                                    mat.DisableKeyword("_ALPHABLEND_ON");
-                                    mat.EnableKeyword("_ALPHAPREMULTIPLY_ON");
-                                    mat.renderQueue = 3000;
-                                    mat.color = new Color(0.2f, 1f, 0.2f, 0.25f);
-                                    //ALPHA ENDS HERE
-                                }
-                            }
-                            */
-                            for (int i = 0; i < ambienceAudio.Length; i++)
+                            for (int i = 0; i < ambienceAudio.Length; i++) // Create audio sources.
                             {
                                 AudioSource source = GorillaLocomotion.Player.Instance.gameObject.AddComponent<AudioSource>();
                                 sources.Add(source);
                             }
-                            var cnt = 0;
-                            foreach (AudioSource source in sources)
+                            int cnt = 0;
+                            foreach (AudioSource source in sources) // Set up audio sources.
                             {
                                 source.volume = 0f;
                                 source.loop = true;
@@ -350,53 +307,41 @@ namespace DynamicSoundscapes
                                 cnt++;
                             }
 
-                            foreach (var trig in triggers)
+                            foreach (GorillaTriggerBox trig in triggers) // Set up triggers.
                             {
                                 boundList.AddItem<Bounds>(trig.GetComponent<Collider>().bounds);
                             }
-                            triggerSides[(int)Areas.None] = false;
+
+                            triggerSides[(int)Areas.None] = false; // How could I do this better? Actually I know, I'll do it later! Or will I?
                             triggerSides[(int)Areas.Forest] = false;
                             triggerSides[(int)Areas.Cosmetics] = false;
                             triggerSides[(int)Areas.Cave] = false;
                             triggerSides[(int)Areas.Canyon] = false;
 
-                            //curReverbPreset = UserReverbPresets.Cave;
-                            //curReverbPreset = UserReverbPresets.Room;
                             ranOnce = true;
                             sources[5].volume = volume;
-                            sources[5].bypassEffects = true;
-                            //sources[5].PlayOneShot(ambienceAudio[5]);
-                            GameObject.Destroy(sources[5], ambienceAudio[5].length);
+                            GameObject.Destroy(sources[5], ambienceAudio[5].length); // Destroy startup sound game object.
                             Console.WriteLine("Ambient Sounds is ready!");
-                            //sources[6].PlayOneShot(ambienceAudio[6]);
-                            //GameObject.Destroy(sources[6], ambienceAudio[6].length);
-
-                            GameObject.Find("Shoulder Camera").GetComponent<Camera>().enabled = false; ;
                         }
-                        if (Time.frameCount % 5 == 0)
+                        if (Time.frameCount % 5 == 0) // OpTiMiZaTiOnS!?!?
                         {
-                            Task t1 = new Task(() =>
+                            Task t1 = new Task(() => // Run in new thread. Multi-threading for the win!
                             {
-                                foreach (GorillaTriggerBox trigger in triggers)
+                                foreach (GorillaTriggerBox trigger in triggers) // Cycle through all triggers, maybe a better way?
                                 {
                                     string name = trigger.name;
                                     Bounds bounds = trigger.GetComponent<Collider>().bounds;
                                     Vector3 closest = bounds.ClosestPoint(plyPos);
                                     Vector3 center = bounds.center;
                                     bool hit = bounds.Intersects(__instance.bodyCollider.bounds);
-                                    //if (hit) Console.WriteLine(trigger.name);
                                     float dist = (plyPos - closest).magnitude / 6;
 
-                                    //Array[] tmpTriggerSides = { Areas.None, false };
-                                    //Areas tmpTriggerSides = Areas.None;
-                                    //bool tmpTriggerSidesOn = false;
                                     AudioSource source = new AudioSource();
-                                    float tmpVolume = -0f; // WTF?
+                                    float tmpVolume = -0f;  
                                     Areas side = Areas.None;
                                     bool sideBool = false;
-                                    switch (name)
+                                    switch (name) // Ignore everything in this switch statement, it's all a mess! AHHHHH!!
                                     {
-                                        // replace with https://stackoverflow.com/a/29804967
                                         case "JoinPublicRoom (tree exit)":
                                             if (hit)
                                             {
@@ -419,7 +364,6 @@ namespace DynamicSoundscapes
                                                 if (!triggerSides[(int)Areas.Cosmetics])
                                                     tmpVolume = (1 - dist) * volume;
                                                 Vector3 dir = (__instance.headCollider.transform.position - closest).normalized;
-                                                //source.panStereo -= Vector3.Dot(__instance.headCollider.transform.right, dir);
                                                 source.panStereo = Vector3.Dot(-__instance.headCollider.transform.right, dir) / Mathf.Clamp(2 - dist, 0, 2);
                                             }
                                             else
@@ -447,7 +391,6 @@ namespace DynamicSoundscapes
                                             {
                                                 tmpVolume = (1 - dist) * volume;
                                                 Vector3 dir = (__instance.headCollider.transform.position - closest).normalized;
-                                                //source.panStereo -= Vector3.Dot(__instance.headCollider.transform.right, dir);
                                                 source.panStereo = Vector3.Dot(-__instance.headCollider.transform.right, dir) / Mathf.Clamp(2 - dist, 0, 2);
                                             }
                                             else
@@ -487,12 +430,10 @@ namespace DynamicSoundscapes
                                             {
                                                 tmpVolume = (1 - dist * 3) * volume;
                                                 Vector3 dir = (__instance.headCollider.transform.position - closest).normalized;
-                                                //source.panStereo -= Vector3.Dot(__instance.headCollider.transform.right, dir);
                                                 source.panStereo = Vector3.Dot(-__instance.headCollider.transform.right, dir) / Mathf.Clamp(2 - dist, 0, 2);
                                             }
                                             else
                                             {
-                                                //source.panStereo = 0f;
                                                 Vector3 dir = (__instance.headCollider.transform.position - closest).normalized;
                                                 source.panStereo = Vector3.Dot(-__instance.headCollider.transform.right, dir) / Mathf.Clamp(2 - dist, 0, 2);
                                                 if (triggerSides[(int)Areas.Forest])
@@ -531,7 +472,6 @@ namespace DynamicSoundscapes
                                                     if (plyPos.y < 5)
                                                     {
                                                         curReverbPreset = UserReverbPresets.Hallway;
-                                                        //Console.WriteLine("aw pepis");
                                                     }
                                                     else
                                                     {
@@ -540,7 +480,7 @@ namespace DynamicSoundscapes
                                             }
                                             break;
                                     }
-                                    if(tmpVolume != -0f)
+                                    if(tmpVolume != -0f) // Weird crap here.
                                     {
                                         source.volume = tmpVolume;
                                     }
@@ -552,7 +492,7 @@ namespace DynamicSoundscapes
                             });
                             t1.Start();
                         }
-                        if (Time.frameCount % 5 == 0)
+                        if (Time.frameCount % 5 == 0) // Falling and reverb.
                         {
                             Task t2 = new Task(() =>
                             {
@@ -561,28 +501,14 @@ namespace DynamicSoundscapes
                                 falling.pitch = Mathf.Clamp((float)Math.Log(vel / 5), 0, 3);
                                 falling.volume = (float)Math.Log(vel / 10);
 
-                                //Console.WriteLine((float)Math.Pow(vel / 50, vel / 50));
-                                //Console.WriteLine(curReverbPreset);
-                                //Console.WriteLine(lastReverbPreset);
-
 
                                 SetReverbPreset();
                             });
                             t2.Start();
                         }
-                        float time = Time.timeSinceLevelLoad;
+                        float time = Time.timeSinceLevelLoad; // Startup sound. OpTiMiZe!
                         if (time < 1)
                             AudioListener.volume = time;
-                        //AudioListener.volume = Mathf.Clamp((float)Math.Log((time + 1) * 2), 0, 1);
-                        /*
-                        for (int i = 0; i < sources.Count; i++)
-                        {
-                            AudioSource source = sources[i];
-                            //Vector3 closest = boundList[i].ClosestPoint(plyPos);
-                            //source.volume = (plyPos - closest).magnitude / 6;
-                        }
-                        */
-
                     }
                 }
                 catch (Exception err)
@@ -593,179 +519,3 @@ namespace DynamicSoundscapes
         }
     }
 }
-/*
-LeavingCaveGeo
-EnteringCaveGeo
-JoinPublicRoom (cave entrance)
-
-<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-source.PlayOneShot(ambienceAudio[cnt], 1f);
-                                    //Console.WriteLine("Balls");
-                                    //__instance.GetComponent<Rigidbody>().velocity += new Vector3(0, 0, 10) * Time.deltaTime;
-*/
-//trig.GetComponent<MeshRenderer>().enabled = true;
-//      for(int i = 0; i<ambienceAudio.){
-//GorillaLocomotion.Player.Instance.gameObject.AddComponent<AudioSource>();
-// }
-/*
- * //static readonly AudioSource source = Resources.FindObjectsOfTypeAll<AudioSource>()[3];
-if (audioChanged)
-{
-    if (Time.time - timer > 0.05)
-    {
-        lerpTrack += 0.01f;
-        timer = Time.time;
-        if (!firstLerp)
-            sources[lastTrack].volume = Mathf.Lerp(volume, 0, lerpTrack);
-
-        sources[curTrack].volume = Mathf.Lerp(0, volume, lerpTrack);
-
-        if (lerpTrack >= 1f)
-        {
-            lerpTrack = 0f;
-            firstLerp = false;
-            Console.WriteLine("Lerped track!: " + curTrack);
-            audioChanged = false;
-        }
-    }
-}
-*/
-
-/*
-if (__instance.GetComponent<Rigidbody>().transform.position.y < 0 && lastArea != 1)
-{
-    lastArea = 1;
-    lastTrack = curTrack;
-    curTrack = 1;
-    audioChanged = true;
-    Console.WriteLine("Cave track!");
-}
-else if (__instance.GetComponent<Rigidbody>().transform.position.y > 0 && lastArea != 0)
-{
-    lastArea = 0;
-    lastTrack = curTrack;
-    curTrack = 0;
-    audioChanged = true;
-    Console.WriteLine("Forest track!");
-}
-*/
-
-/*
-
-
-                        foreach (var trig in triggers)
-                        {
-                            Bounds bounds = trig.GetComponent<Collider>().bounds;
-                            bool hit = bounds.Intersects(__instance.bodyCollider.bounds);
-                            if (hit)
-                            {
-                                Vector3 center = trig.GetComponent<Collider>().bounds.center;
-                                Console.WriteLine(trig.name);
-                                bool refresh = true;
-                                Areas area = Areas.None;
-                                Tracks track = Tracks.None;
-                                Console.WriteLine(plyPos.x < center.x + 2 && plyPos.x > center.x - 2);
-                                switch (trig.name)
-                                {
-                                    case "JoinPublicRoom (tree exit)":
-                                        if (plyPos.z > center.z - 1)
-                                        {
-                                            area = Areas.Forest;
-                                            track = Tracks.Forest;
-                                        }
-                                        else if (plyPos.x < center.x + 2 && plyPos.x > center.x - 2.5)
-                                        {
-                                            area = Areas.Stump;
-                                            track = Tracks.Forest;
-                                        }
-                                        break;
-                                    default:
-                                        refresh = false;
-                                        break;
-                                }
-                                if (refresh)
-                                {
-                                    SetLastArea();
-                                    curArea = area;
-                                    SetLastTrack();
-                                    curTrack = track;
-                                    curBounds = bounds;
-                                }
-                            }
-                        }
-                        //https://docs.unity3d.com/ScriptReference/Collider.ClosestPointOnBounds.html
-
-                        float lerp1 = 0f;
-                        float lerp2 = 0f;
-                        Vector3 closest = curBounds.ClosestPoint(plyPos);
-
-                        switch (curArea)
-                        {
-                            case Areas.Stump:
-                                lerp1 = 1 - (plyPos - closest).magnitude / 6;
-                                lerp2 = 0;
-                                break;
-                            case Areas.Forest:
-                                lerp1 = 1;
-                                lerp2 = 0;
-                                break;
-                        }
-                        /*
-                        if (curArea == Areas.Stump)
-                        {
-                            lerp1 = 1 - (plyPos - closest).magnitude / 6;
-                            lerp2 = 0;
-                            //Console.WriteLine(Mathf.Lerp(0, volume, lerp1));
-                            //Console.WriteLine("track: " + (int)curTrack);
-                        }
-                        
-if (curArea != Areas.None && curTrack != Tracks.None)
-{
-    sources[(int)curTrack - 1].volume = Mathf.Lerp(0, volume, lerp1);
-    if (curArea != Areas.Stump && curArea != Areas.Forest)
-        sources[(int)lastTrack - 1].volume = Mathf.Lerp(0, volume, lerp2);
-}
-
-
-https://mynoise.net/NoiseMachines/meadowCreekSoundscapeGenerator.php?c=0&l=2020202020202020670000
-LITERALLY THE GREATEST WEBSITE IN EXISTANCE!    
-*/
-
-/*
- * int tagMat = 0;
-                                if (PhotonNetwork.InRoom && PhotonNetwork.IsConnectedAndReady)
-                                    try
-                                    {
-                                        tagMat = (int)PhotonNetwork.LocalPlayer.CustomProperties["matIndex"];
-                                    }
-                                    catch { }
-                                if (tagMat == 1 || tagMat == 2)
-                                {
-                                    if (tagWait != 1 && tagWait != 2)
-                                    {
-                                        tagged = true;
-                                    }
-                                }
-                                else
-                                    tagWait = 0;
-
-                                if (tagged)
-                                {
-                                    if (tagWait != 1)
-                                    {
-                                        tagWait = 1;
-                                        float tagTimer = Time.time;
-                                        audioLowPass.enabled = true;
-                                    }
-                                    if (tagWait == 1)
-                                    {
-                                        audioLowPass.cutoffFrequency = (Time.time - tagTimer) * 7333;
-                                        if (Time.time - 3 > tagTimer)
-                                        {
-                                            audioLowPass.enabled = false;
-                                            tagWait = 2;
-                                            tagged = false;
-                                        }
-                                    }
-                                }
-*/
