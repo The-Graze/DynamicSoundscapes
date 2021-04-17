@@ -18,15 +18,15 @@ Smoothly place the DynamicSoundscapes.dll into your BepInEx plugins folder. If y
 
 ![Insert picture of sexy monke here.](https://raw.githubusercontent.com/auralius-dev/SmoothMonke/main/img/smooth_monke.jpg)
 
-Todo,
+Todo,/
 Rewrite the codebase.
 
 - Put ReverbPresetArrays somewhere else
 - Rewrite all the actual audio crap.
 - Remove unnecessary variables.
 
-When custom map loader comes out or I get access to it (plz gimmie) add ability for custom maps to add custom audio triggers and sounds.
-Change reverb of canyon 'houses'.
-Change cave ambience to something a little more light.
-Remove wind from forest ambience and add it to the trees.
-Add step sounds per material.
+When custom map loader comes out or I get access to it (plz gimmie) add ability for custom maps to add custom audio triggers and sounds./
+Change reverb of canyon 'houses'./
+Change cave ambience to something a little more light./
+Remove wind from forest ambience and add it to the trees./
+Add step sounds per material./
