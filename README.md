@@ -27,3 +27,6 @@ Rewrite the codebase.
 
 When custom map loader comes out or I get access to it (plz gimmie) add ability for custom maps to add custom audio triggers and sounds.
 Change reverb of canyon 'houses'.
+Change cave ambience to something a little more light.
+Remove wind from forest ambience and add it to the trees.
+Add step sounds per material.

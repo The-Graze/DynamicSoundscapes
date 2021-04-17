@@ -253,6 +253,8 @@ namespace DynamicSoundscapes
                     lastTrack = curTrack;
             }
 
+            private static float timeSinceLoad = 0f;
+
             private static void SetReverbPreset() // Custom function for setting reverb preset.
             {
                 if (curReverbPreset != lastReverbPreset)
@@ -321,6 +323,7 @@ namespace DynamicSoundscapes
                             ranOnce = true;
                             sources[5].volume = volume;
                             GameObject.Destroy(sources[5], ambienceAudio[5].length); // Destroy startup sound game object.
+                            timeSinceLoad = Time.time;
                             Console.WriteLine("Ambient Sounds is ready!");
                         }
                         if (Time.frameCount % 5 == 0) // OpTiMiZaTiOnS!?!?
@@ -506,7 +509,7 @@ namespace DynamicSoundscapes
                             });
                             t2.Start();
                         }
-                        float time = Time.timeSinceLevelLoad; // Startup sound. OpTiMiZe!
+                        float time = Time.time - timeSinceLoad; // Startup sound. OpTiMiZe!
                         if (time < 1)
                             AudioListener.volume = time;
                     }
