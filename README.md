@@ -1,3 +1,10 @@
+
+#DISCLAIMER
+
+this isn't origionaly be me, as you can see it is a "Fork" on github, before anybody assumes, yes a pullrequest will be made when i finih my version.
+
+please show love to the orignal creator and let them know about the pullrquest if they still do gorilla tag stuff.
+
 # Dynamic Soundscapes
 
 **Adds dynamic sound to the game.**
